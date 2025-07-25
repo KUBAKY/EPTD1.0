@@ -171,6 +171,13 @@
         v-model:visible="showAddSessionDialog"
         @success="handleSessionAdded"
       />
+
+      <!-- 会员编辑对话框 -->
+      <MemberEditDialog
+        v-model:visible="showMemberDialog"
+        :member="currentMember"
+        @success="handleMemberSuccess"
+      />
     </div>
   </Layout>
 </template>
@@ -185,6 +192,7 @@ import {
 import Layout from '@/components/Layout.vue'
 import CreateTemplate from '@/components/CreateTemplate.vue'
 import AddSessionDialog from '@/components/AddSessionDialog.vue'
+import MemberEditDialog from '@/components/MemberEditDialog.vue'
 import { http } from '@/utils/http'
 
 const router = useRouter()
@@ -209,35 +217,39 @@ const showCreateDialog = ref(false)
 // 添加课程对话框
 const showAddSessionDialog = ref(false)
 
+// 会员编辑对话框
+const showMemberDialog = ref(false)
+const currentMember = ref(null)
+
 // 快速操作
 const quickActions = ref([
   {
     key: 'add-member',
     label: '添加会员',
     icon: 'User',
-    type: 'primary',
-    action: () => router.push('/members/new')
+    type: 'primary' as const,
+    action: () => handleAddMember()
   },
   {
     key: 'add-template',
     label: '创建模板',
     icon: 'Files',
-    type: 'success',
+    type: 'success' as const,
     action: () => showCreateDialog.value = true
   },
   {
     key: 'view-logs',
     label: '查看记录',
     icon: 'Document',
-    type: 'info',
+    type: 'info' as const,
     action: () => router.push('/logs')
   },
   {
     key: 'settings',
     label: '系统设置',
     icon: 'Setting',
-    type: 'warning',
-    action: () => console.log('设置')
+    type: 'warning' as const,
+    action: () => router.push('/settings')
   }
 ])
 
@@ -272,6 +284,18 @@ const handleTemplateCreated = (template: any) => {
 
 const handleSessionAdded = () => {
   loadTodaySessions()
+  loadStats()
+}
+
+// 会员相关方法
+const handleAddMember = () => {
+  currentMember.value = null
+  showMemberDialog.value = true
+}
+
+const handleMemberSuccess = () => {
+  showMemberDialog.value = false
+  loadRecentMembers()
   loadStats()
 }
 
