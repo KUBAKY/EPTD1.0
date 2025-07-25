@@ -154,9 +154,9 @@ const displayTitle = computed(() => {
 const isRequiredField = (field: string) => {
   const requiredFields = {
     members: ['姓名', '手机号', '性别', '年龄'],
-    coaches: ['用户名', '姓名', '手机号'],
-    templates: ['模板名称', '分类', '描述'],
-    exercises: ['动作名称', '分类', '描述']
+    coaches: ['用户名', '姓名', '密码', '角色', '手机号', '状态'],
+    templates: ['模板名称', '模板分类', '功能说明', '禁忌条件', '训练内容(JSON格式)'],
+    exercises: ['动作名称', '类别', '描述', '目标肌群', '难度等级', '注意事项', '变量1类型', '变量2类型']
   }
   return requiredFields[props.type]?.includes(field) || false
 }

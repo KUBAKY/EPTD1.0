@@ -207,6 +207,8 @@ db.run(`
     target_muscles TEXT,
     difficulty_level TEXT CHECK(difficulty_level IN ('beginner', 'intermediate', 'advanced')) DEFAULT 'intermediate',
     notes TEXT,
+    variable1_type TEXT CHECK(variable1_type IN ('weight', 'intensity', 'difficulty')) DEFAULT 'weight',
+    variable2_type TEXT CHECK(variable2_type IN ('reps', 'duration')) DEFAULT 'reps',
     is_active INTEGER DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -272,42 +274,43 @@ realMembers.forEach((member, index) => {
 
 // 插入真实训练动作数据
 const realExercises = [
-  ['深蹲', 'strength', '经典的下肢力量训练动作，主要锻炼大腿前侧肌群', '股四头肌、臀大肌、核心肌群', 'intermediate'],
-  ['卧推', 'strength', '上肢推举动作，主要锻炼胸部肌群', '胸大肌、三角肌前束、肱三头肌', 'intermediate'],
-  ['硬拉', 'strength', '全身性力量训练动作，主要锻炼后链肌群', '臀大肌、腘绳肌、竖脊肌', 'advanced'],
-  ['引体向上', 'strength', '上肢拉力动作，主要锻炼背部肌群', '背阔肌、菱形肌、肱二头肌', 'intermediate'],
-  ['俯卧撑', 'strength', '自重推举动作，主要锻炼胸部肌群', '胸大肌、三角肌前束、肱三头肌', 'beginner'],
-  ['平板支撑', 'functional', '核心稳定性训练动作', '腹直肌、腹外斜肌、核心肌群', 'beginner'],
-  ['卷腹', 'strength', '腹部肌群训练动作', '腹直肌、腹外斜肌', 'beginner'],
-  ['俄罗斯转体', 'functional', '核心旋转训练动作', '腹外斜肌、腹内斜肌', 'intermediate'],
-  ['侧平板', 'functional', '侧核心稳定性训练', '腹外斜肌、腹内斜肌', 'intermediate'],
-  ['腿举', 'strength', '下肢推举器械训练', '股四头肌、臀大肌', 'intermediate'],
-  ['腿弯举', 'strength', '下肢拉力器械训练', '腘绳肌、腓肠肌', 'intermediate'],
-  ['肩推', 'strength', '上肢推举动作，主要锻炼肩部肌群', '三角肌、肱三头肌', 'intermediate'],
-  ['哑铃飞鸟', 'strength', '胸部孤立训练动作', '胸大肌、三角肌前束', 'intermediate'],
-  ['哑铃弯举', 'strength', '上肢拉力动作，主要锻炼手臂肌群', '肱二头肌、肱肌', 'beginner'],
-  ['三头肌下压', 'strength', '上肢推举动作，主要锻炼手臂后侧', '肱三头肌', 'beginner'],
-  ['跑步', 'cardio', '有氧运动，提升心肺功能', '全身肌群', 'beginner'],
-  ['椭圆机', 'cardio', '低冲击有氧运动', '全身肌群', 'beginner'],
-  ['动感单车', 'cardio', '室内有氧运动', '下肢肌群', 'beginner'],
-  ['划船机', 'cardio', '全身性有氧运动', '全身肌群', 'intermediate'],
-  ['跳绳', 'cardio', '高效有氧运动', '下肢肌群', 'intermediate'],
-  ['静态拉伸', 'flexibility', '改善肌肉柔韧性', '全身肌群', 'beginner'],
-  ['动态拉伸', 'flexibility', '运动前热身拉伸', '全身肌群', 'beginner'],
-  ['瑜伽', 'flexibility', '提升身体柔韧性', '全身肌群', 'beginner'],
-  ['普拉提', 'functional', '核心控制和身体协调训练', '核心肌群', 'intermediate'],
-  ['壶铃摆动', 'functional', '全身性功能性训练', '全身肌群', 'advanced'],
-  ['TRX训练', 'functional', '悬吊训练，提升核心稳定性', '全身肌群', 'intermediate'],
-  ['波比跳', 'cardio', '高强度间歇训练动作', '全身肌群', 'advanced'],
-  ['开合跳', 'cardio', '有氧热身动作', '全身肌群', 'beginner'],
-  ['高抬腿', 'cardio', '有氧热身动作', '下肢肌群', 'beginner'],
-  ['登山者', 'cardio', '有氧核心训练动作', '核心肌群', 'intermediate']
+  ['深蹲', 'strength', '经典的下肢力量训练动作，主要锻炼大腿前侧肌群', '股四头肌、臀大肌、核心肌群', 'intermediate', '注意膝盖不要超过脚尖', 'weight', 'reps'],
+  ['卧推', 'strength', '上肢推举动作，主要锻炼胸部肌群', '胸大肌、三角肌前束、肱三头肌', 'intermediate', '注意肩胛骨收紧', 'weight', 'reps'],
+  ['硬拉', 'strength', '全身性力量训练动作，主要锻炼后链肌群', '臀大肌、腘绳肌、竖脊肌', 'advanced', '注意保持脊柱中立', 'weight', 'reps'],
+  ['引体向上', 'strength', '上肢拉力动作，主要锻炼背部肌群', '背阔肌、菱形肌、肱二头肌', 'intermediate', '注意肩胛骨下沉', 'weight', 'reps'],
+  ['俯卧撑', 'strength', '自重推举动作，主要锻炼胸部肌群', '胸大肌、三角肌前束、肱三头肌', 'beginner', '注意身体成一条直线', 'weight', 'reps'],
+  ['平板支撑', 'functional', '核心稳定性训练动作', '腹直肌、腹外斜肌、核心肌群', 'beginner', '注意保持身体稳定', 'intensity', 'duration'],
+  ['卷腹', 'strength', '腹部肌群训练动作', '腹直肌、腹外斜肌', 'beginner', '注意颈部不要用力', 'weight', 'reps'],
+  ['俄罗斯转体', 'functional', '核心旋转训练动作', '腹外斜肌、腹内斜肌', 'intermediate', '注意控制旋转速度', 'intensity', 'duration'],
+  ['侧平板', 'functional', '侧核心稳定性训练', '腹外斜肌、腹内斜肌', 'intermediate', '注意保持身体稳定', 'intensity', 'duration'],
+  ['腿举', 'strength', '下肢推举器械训练', '股四头肌、臀大肌', 'intermediate', '注意膝盖对齐脚尖', 'weight', 'reps'],
+  ['腿弯举', 'strength', '下肢拉力器械训练', '腘绳肌、腓肠肌', 'intermediate', '注意控制动作速度', 'weight', 'reps'],
+  ['肩推', 'strength', '上肢推举动作，主要锻炼肩部肌群', '三角肌、肱三头肌', 'intermediate', '注意避免耸肩', 'weight', 'reps'],
+  ['哑铃飞鸟', 'strength', '胸部孤立训练动作', '胸大肌、三角肌前束', 'intermediate', '注意控制动作幅度', 'weight', 'reps'],
+  ['哑铃弯举', 'strength', '上肢拉力动作，主要锻炼手臂肌群', '肱二头肌、肱肌', 'beginner', '注意避免身体摆动', 'weight', 'reps'],
+  ['三头肌下压', 'strength', '上肢推举动作，主要锻炼手臂后侧', '肱三头肌', 'beginner', '注意肘部固定', 'weight', 'reps'],
+  ['跑步', 'cardio', '有氧运动，提升心肺功能', '全身肌群', 'beginner', '注意运动强度，循序渐进', 'intensity', 'duration'],
+  ['椭圆机', 'cardio', '低冲击有氧运动', '全身肌群', 'beginner', '注意保持正确姿势', 'intensity', 'duration'],
+  ['动感单车', 'cardio', '室内有氧运动', '下肢肌群', 'beginner', '注意调整座椅高度', 'intensity', 'duration'],
+  ['划船机', 'cardio', '全身性有氧运动', '全身肌群', 'intermediate', '注意保持背部挺直', 'intensity', 'duration'],
+  ['跳绳', 'cardio', '高效有氧运动', '下肢肌群', 'intermediate', '注意控制跳跃高度', 'intensity', 'duration'],
+  ['静态拉伸', 'flexibility', '改善肌肉柔韧性', '全身肌群', 'beginner', '注意不要过度拉伸', 'intensity', 'duration'],
+  ['动态拉伸', 'flexibility', '运动前热身拉伸', '全身肌群', 'beginner', '注意动作流畅', 'intensity', 'duration'],
+  ['瑜伽', 'flexibility', '提升身体柔韧性', '全身肌群', 'beginner', '注意呼吸配合', 'intensity', 'duration'],
+  ['普拉提', 'functional', '核心控制和身体协调训练', '核心肌群', 'intermediate', '注意控制动作质量', 'intensity', 'duration'],
+  ['壶铃摆动', 'functional', '全身性功能性训练', '全身肌群', 'advanced', '注意髋关节发力', 'weight', 'reps'],
+  ['TRX训练', 'functional', '悬吊训练，提升核心稳定性', '全身肌群', 'intermediate', '注意保持身体稳定', 'intensity', 'duration'],
+  ['波比跳', 'functional', '全身性高强度训练', '全身肌群', 'advanced', '注意动作连贯性', 'intensity', 'duration'],
+  ['开合跳', 'cardio', '简单有效的有氧运动', '全身肌群', 'beginner', '注意落地缓冲', 'intensity', 'duration'],
+  ['高抬腿', 'cardio', '提升心肺功能的有氧运动', '下肢肌群', 'beginner', '注意保持上身稳定', 'intensity', 'duration'],
+  ['深蹲跳', 'functional', '下肢爆发力训练', '下肢肌群', 'intermediate', '注意落地缓冲', 'weight', 'reps'],
+  ['箭步蹲', 'strength', '下肢单侧力量训练', '股四头肌、臀大肌', 'intermediate', '注意前后腿角度', 'weight', 'reps']
 ]
 
 realExercises.forEach(exercise => {
   db.run(`
-    INSERT OR IGNORE INTO exercises (name, category, description, target_muscles, difficulty_level)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT OR IGNORE INTO exercises (name, category, description, target_muscles, difficulty_level, notes, variable1_type, variable2_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `, exercise)
 })
 

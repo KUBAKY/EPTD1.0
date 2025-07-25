@@ -48,35 +48,37 @@ router.get('/templates/:type', (req, res) => {
   
   const templates = {
     members: {
-      headers: ['姓名', '手机号', '性别', '年龄', '身高', '体重', 'BMI', '健康史', '运动禁忌', '紧急联系人', '紧急电话', '备注'],
-      description: '会员信息导入模板，必填字段：姓名、手机号、性别、年龄',
+      headers: ['姓名', '手机号', '性别', '年龄', '身高(cm)', '体重(kg)', '健康历史', '运动禁忌', '紧急联系人', '紧急电话', '备注', '访问模式', '教练用户名'],
+      description: '会员信息导入模板，必填字段：姓名、手机号、性别、年龄。可选字段：身高、体重、健康历史、运动禁忌、紧急联系人、紧急电话、备注、访问模式、教练用户名',
       example: [
-        ['张三', '13800138001', 'male', '28', '175.5', '70.2', '22.8', '无特殊病史', '无运动禁忌', '张父', '13900139001', ''],
-        ['李四', '13800138002', 'female', '32', '165.0', '58.5', '21.5', '无特殊病史', '无运动禁忌', '李母', '13900139002', '']
+        ['张三', '13800138001', 'male', 28, 175.5, 70.2, '无特殊病史', '无运动禁忌', '张父', '13900139001', '健身爱好者，目标增肌', 'shared', 'coach001'],
+        ['李四', '13800138002', 'female', 32, 165.0, 58.5, '无特殊病史', '无运动禁忌', '李母', '13900139002', '产后恢复，目标减脂塑形', 'exclusive', 'coach002']
       ]
     },
     coaches: {
-      headers: ['用户名', '姓名', '手机号', '密码'],
-      description: '教练信息导入模板，必填字段：用户名、姓名、手机号',
+      headers: ['用户名', '姓名', '密码', '角色', '手机号', '状态'],
+      description: '教练信息导入模板，必填字段：用户名、姓名、密码、角色、手机号、状态',
       example: [
-        ['coach001', '王教练', '13800138001', '123456'],
-        ['coach002', '张教练', '13800138002', '123456']
+        ['coach001', '王教练', '123456', 'coach', '13800138001', 1],
+        ['coach002', '张教练', '123456', 'coach', '13800138002', 1],
+        ['admin001', '李管理员', '123456', 'admin', '13800138003', 1]
       ]
     },
     templates: {
-      headers: ['模板名称', '分类', '描述', '限制条件', '模板内容'],
-      description: '训练模板导入模板，必填字段：模板名称、分类、描述',
+      headers: ['模板名称', '模板分类', '功能说明', '禁忌条件', '训练内容(JSON格式)'],
+      description: '训练模板导入模板，必填字段：模板名称、模板分类、功能说明、禁忌条件、训练内容',
       example: [
-        ['基础力量训练', 'strength', '适合初学者的基础力量训练计划', '无特殊禁忌', '{"warmup":[],"main":[],"stretch":[]}'],
-        ['上肢训练', 'strength', '专注于胸、肩、臂部肌肉的训练', '无特殊禁忌', '{"warmup":[],"main":[],"stretch":[]}']
+        ['初级力量训练', 'strength', '适合初学者的基础力量训练计划，重点培养正确的动作模式', '无特殊禁忌，建议在教练指导下进行', '{"warmup":[{"name":"关节活动","description":"全身关节活动","variable1":"intensity","variable2":"duration"}],"main":[{"name":"深蹲","description":"基础下肢力量训练","variable1":"weight","variable2":"reps"}],"stretch":[{"name":"静态拉伸","description":"全身肌肉拉伸","variable1":"intensity","variable2":"duration"}]}'],
+        ['上肢训练', 'strength', '专注于胸、肩、臂部肌肉的训练', '无特殊禁忌', '{"warmup":[{"name":"肩部环绕","description":"肩部热身","variable1":"intensity","variable2":"duration"}],"main":[{"name":"卧推","description":"胸部力量训练","variable1":"weight","variable2":"reps"}],"stretch":[{"name":"胸部拉伸","description":"胸部肌肉拉伸","variable1":"intensity","variable2":"duration"}]}']
       ]
     },
     exercises: {
-      headers: ['动作名称', '分类', '描述', '目标肌群', '难度等级', '注意事项'],
-      description: '训练动作导入模板，必填字段：动作名称、分类、描述',
+      headers: ['动作名称', '类别', '描述', '目标肌群', '难度等级', '注意事项', '变量1类型', '变量2类型'],
+      description: '训练动作导入模板，必填字段：动作名称、类别、描述、目标肌群、难度等级、注意事项、变量1类型、变量2类型',
       example: [
-        ['深蹲', 'strength', '基础下肢力量训练动作', '股四头肌、臀大肌', 'intermediate', '注意膝盖不要超过脚尖'],
-        ['卧推', 'strength', '经典胸部力量训练动作', '胸大肌、三角肌前束', 'intermediate', '注意肩胛骨收紧']
+        ['深蹲', 'strength', '经典的下肢力量训练动作，主要锻炼大腿前侧肌群', '股四头肌、臀大肌、核心肌群', 'intermediate', '注意膝盖不要超过脚尖', 'weight', 'reps'],
+        ['卧推', 'strength', '上肢推举动作，主要锻炼胸部肌群', '胸大肌、三角肌前束、肱三头肌', 'intermediate', '注意肩胛骨收紧', 'weight', 'reps'],
+        ['跑步', 'cardio', '有氧运动，提升心肺功能', '全身肌群', 'beginner', '注意运动强度，循序渐进', 'intensity', 'duration']
       ]
     }
   }
@@ -100,10 +102,10 @@ router.get('/download/:type', (req, res) => {
   const { type } = req.params
   
   const templateFiles = {
-    members: 'members_template.xlsx',
-    coaches: 'coaches_template.xlsx',
-    templates: 'templates_template.xlsx',
-    exercises: 'exercises_template.xlsx'
+    members: 'members_template_optimized.xlsx',
+    coaches: 'coaches_template_optimized.xlsx',
+    templates: 'templates_template_optimized.xlsx',
+    exercises: 'exercises_template_optimized.xlsx'
   }
   
   const fileName = templateFiles[type]
@@ -114,7 +116,7 @@ router.get('/download/:type', (req, res) => {
     })
   }
   
-  const filePath = path.join(__dirname, '../../sample-templates', fileName)
+  const filePath = path.join(__dirname, '../sample-templates', fileName)
   
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({

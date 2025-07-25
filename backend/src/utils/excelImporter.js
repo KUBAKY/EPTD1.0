@@ -60,7 +60,7 @@ class ExcelImporter {
     if (!data || data.length < 2) return false
     
     const headers = data[0]
-    const requiredFields = ['用户名', '姓名', '手机号']
+    const requiredFields = ['用户名', '姓名', '密码', '角色', '手机号', '状态']
     
     return requiredFields.every(field => headers.includes(field))
   }
@@ -70,7 +70,7 @@ class ExcelImporter {
     if (!data || data.length < 2) return false
     
     const headers = data[0]
-    const requiredFields = ['模板名称', '分类', '描述']
+    const requiredFields = ['模板名称', '模板分类', '功能说明', '禁忌条件', '训练内容(JSON格式)']
     
     return requiredFields.every(field => headers.includes(field))
   }
@@ -80,7 +80,7 @@ class ExcelImporter {
     if (!data || data.length < 2) return false
     
     const headers = data[0]
-    const requiredFields = ['动作名称', '分类', '描述']
+    const requiredFields = ['动作名称', '类别', '描述', '目标肌群', '难度等级', '注意事项', '变量1类型', '变量2类型']
     
     return requiredFields.every(field => headers.includes(field))
   }
@@ -176,8 +176,8 @@ class ExcelImporter {
   insertMember(memberData, coachId) {
     return new Promise((resolve, reject) => {
       const {
-        姓名, 手机号, 性别, 年龄, 身高, 体重, BMI, 
-        健康史, 运动禁忌, 紧急联系人, 紧急电话, 备注
+        姓名, 手机号, 性别, 年龄, '身高(cm)': 身高, '体重(kg)': 体重, 
+        健康历史, 运动禁忌, 紧急联系人, 紧急电话, 备注, 访问模式, 教练用户名
       } = memberData
 
       if (!姓名 || !手机号 || !性别 || !年龄) {
@@ -187,38 +187,70 @@ class ExcelImporter {
 
       const height = 身高 ? parseFloat(身高) : null
       const weight = 体重 ? parseFloat(体重) : null
-      const bmi = BMI ? parseFloat(BMI) : null
       const age = parseInt(年龄)
+      
+      // 计算BMI
+      let bmi = null
+      if (height && weight) {
+        bmi = (weight / Math.pow(height / 100, 2)).toFixed(1)
+      }
 
-      const sql = `
-        INSERT INTO members (
-          name, phone, gender, age, height, weight, bmi,
-          health_history, medical_restrictions, emergency_contact,
-          emergency_phone, notes, coach_id, access_mode
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `
+      // 处理教练分配
+      let assignedCoachId = coachId
+      if (教练用户名) {
+        // 根据教练用户名查找教练ID
+        db.get('SELECT id FROM users WHERE username = ? AND role = "coach"', [教练用户名], (err, coach) => {
+          if (err) {
+            reject(new Error(`查询教练失败: ${err.message}`))
+            return
+          }
+          if (coach) {
+            assignedCoachId = coach.id
+          }
+          this.insertMemberData(姓名, 手机号, 性别, age, height, weight, bmi, 健康历史, 运动禁忌, 紧急联系人, 紧急电话, 备注, 访问模式, assignedCoachId, resolve, reject)
+        })
+      } else {
+        this.insertMemberData(姓名, 手机号, 性别, age, height, weight, bmi, 健康历史, 运动禁忌, 紧急联系人, 紧急电话, 备注, 访问模式, assignedCoachId, resolve, reject)
+      }
+    })
+  }
 
-      db.run(sql, [
-        姓名, 手机号, 性别, age, height, weight, bmi,
-        健康史 || '', 运动禁忌 || '', 紧急联系人 || '',
-        紧急电话 || '', 备注 || '', coachId, 'shared'
-      ], function(err) {
-        if (err) {
-          reject(new Error(`数据库插入失败: ${err.message}`))
-        } else {
-          resolve(this.lastID)
-        }
-      })
+  insertMemberData(name, phone, gender, age, height, weight, bmi, healthHistory, medicalRestrictions, emergencyContact, emergencyPhone, notes, accessMode, coachId, resolve, reject) {
+    const sql = `
+      INSERT INTO members (
+        name, phone, gender, age, height, weight, bmi,
+        health_history, medical_restrictions, emergency_contact,
+        emergency_phone, notes, coach_id, access_mode
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `
+
+    db.run(sql, [
+      name, phone, gender, age, height, weight, bmi,
+      healthHistory || '', medicalRestrictions || '', emergencyContact || '',
+      emergencyPhone || '', notes || '', coachId, accessMode || 'shared'
+    ], function(err) {
+      if (err) {
+        reject(new Error(`数据库插入失败: ${err.message}`))
+      } else {
+        resolve(this.lastID)
+      }
     })
   }
 
   // 插入教练数据
   insertCoach(coachData) {
     return new Promise((resolve, reject) => {
-      const { 用户名, 姓名, 手机号, 密码 = '123456' } = coachData
+      const { 用户名, 姓名, 密码, 角色, 手机号, 状态 } = coachData
 
-      if (!用户名 || !姓名 || !手机号) {
+      if (!用户名 || !姓名 || !密码 || !角色 || !手机号) {
         reject(new Error('必填字段不能为空'))
+        return
+      }
+
+      // 验证角色
+      const validRoles = ['coach', 'admin']
+      if (!validRoles.includes(角色)) {
+        reject(new Error('角色必须是: coach 或 admin'))
         return
       }
 
@@ -237,10 +269,10 @@ class ExcelImporter {
         const passwordHash = bcrypt.hashSync(密码, 10)
         const sql = `
           INSERT INTO users (username, password_hash, role, name, phone, status)
-          VALUES (?, ?, 'coach', ?, ?, 1)
+          VALUES (?, ?, ?, ?, ?, ?)
         `
 
-        db.run(sql, [用户名, passwordHash, 姓名, 手机号], function(err) {
+        db.run(sql, [用户名, passwordHash, 角色, 姓名, 手机号, 状态 || 1], function(err) {
           if (err) {
             reject(new Error(`数据库插入失败: ${err.message}`))
           } else {
@@ -254,34 +286,41 @@ class ExcelImporter {
   // 插入模板数据
   insertTemplate(templateData, creatorId) {
     return new Promise((resolve, reject) => {
-      const { 模板名称, 分类, 描述, 限制条件, 模板内容 } = templateData
+      const { 模板名称, 模板分类, 功能说明, 禁忌条件, '训练内容(JSON格式)': 训练内容 } = templateData
 
-      if (!模板名称 || !分类 || !描述) {
+      if (!模板名称 || !模板分类 || !功能说明) {
         reject(new Error('必填字段不能为空'))
         return
       }
 
       // 验证分类
       const validCategories = ['strength', 'comprehensive', 'functional']
-      if (!validCategories.includes(分类)) {
-        reject(new Error('分类必须是: strength, comprehensive, functional'))
+      if (!validCategories.includes(模板分类)) {
+        reject(new Error('模板分类必须是: strength, comprehensive, functional'))
         return
       }
 
-      const templateContent = 模板内容 ? JSON.parse(模板内容) : {
-        warmup: [],
-        main: [],
-        stretch: []
+      let templateContent
+      try {
+        templateContent = 训练内容 ? JSON.parse(训练内容) : {
+          warmup: [],
+          main: [],
+          stretch: []
+        }
+      } catch (error) {
+        reject(new Error('训练内容必须是有效的JSON格式'))
+        return
       }
 
       const sql = `
         INSERT INTO training_templates (
-          name, category, description, restrictions, creator_id, template_content
+          name, category, description, restrictions, content, creator_id
         ) VALUES (?, ?, ?, ?, ?, ?)
       `
 
       db.run(sql, [
-        模板名称, 分类, 描述, 限制条件 || '', creatorId, JSON.stringify(templateContent)
+        模板名称, 模板分类, 功能说明, 禁忌条件 || '', 
+        JSON.stringify(templateContent), creatorId
       ], function(err) {
         if (err) {
           reject(new Error(`数据库插入失败: ${err.message}`))
@@ -295,10 +334,38 @@ class ExcelImporter {
   // 插入动作数据
   insertExercise(exerciseData) {
     return new Promise((resolve, reject) => {
-      const { 动作名称, 分类, 描述, 目标肌群, 难度等级, 注意事项 } = exerciseData
+      const { 动作名称, 类别, 描述, 目标肌群, 难度等级, 注意事项, 变量1类型, 变量2类型 } = exerciseData
 
-      if (!动作名称 || !分类 || !描述) {
+      if (!动作名称 || !类别 || !描述 || !目标肌群 || !难度等级 || !注意事项 || !变量1类型 || !变量2类型) {
         reject(new Error('必填字段不能为空'))
+        return
+      }
+
+      // 验证类别
+      const validCategories = ['strength', 'cardio', 'flexibility', 'functional']
+      if (!validCategories.includes(类别)) {
+        reject(new Error('类别必须是: strength, cardio, flexibility, functional'))
+        return
+      }
+
+      // 验证难度等级
+      const validDifficultyLevels = ['beginner', 'intermediate', 'advanced']
+      if (!validDifficultyLevels.includes(难度等级)) {
+        reject(new Error('难度等级必须是: beginner, intermediate, advanced'))
+        return
+      }
+
+      // 验证变量类型
+      const validVariable1Types = ['weight', 'intensity', 'difficulty']
+      const validVariable2Types = ['reps', 'duration']
+      
+      if (!validVariable1Types.includes(变量1类型)) {
+        reject(new Error('变量1类型必须是: weight, intensity, difficulty'))
+        return
+      }
+      
+      if (!validVariable2Types.includes(变量2类型)) {
+        reject(new Error('变量2类型必须是: reps, duration'))
         return
       }
 
@@ -315,12 +382,14 @@ class ExcelImporter {
         }
 
         const sql = `
-          INSERT INTO exercises (name, category, description, target_muscles, difficulty_level, notes)
-          VALUES (?, ?, ?, ?, ?, ?)
+          INSERT INTO exercises (
+            name, category, description, target_muscles, difficulty_level, notes,
+            variable1_type, variable2_type
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `
 
         db.run(sql, [
-          动作名称, 分类, 描述, 目标肌群 || '', 难度等级 || 'medium', 注意事项 || ''
+          动作名称, 类别, 描述, 目标肌群, 难度等级, 注意事项, 变量1类型, 变量2类型
         ], function(err) {
           if (err) {
             reject(new Error(`数据库插入失败: ${err.message}`))
